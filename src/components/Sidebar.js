@@ -5,35 +5,16 @@ import './Sidebar.css';
 const Sidebar = ({ videos, onSelectVideo, currentVideo }) => {
   const [activeKey, setActiveKey] = useState(null);
 
-  // Group videos by module with improved pattern detection
+  // Group videos by module
   const groupByModule = (videos) => {
     const modules = {};
     
-    if (!videos || videos.length === 0) {
-      return { 'No Videos Found': [] };
-    }
-    
     videos.forEach(video => {
-      if (!video['Video Name']) {
-        return;
-      }
+      // Extract module number from video name (e.g., "Mod01", "Mod02")
+      const moduleName = video['Video Name'].match(/Mod(\d+)/i);
       
-      // Try different patterns for module extraction
-      // Pattern 1: Mod01, Mod02, etc.
-      let moduleMatch = video['Video Name'].match(/Mod(\d+)/i);
-      
-      // Pattern 2: Module 1, Module 2, etc.
-      if (!moduleMatch) {
-        moduleMatch = video['Video Name'].match(/Module\s*(\d+)/i);
-      }
-      
-      // Pattern 3: M01, M02, etc.
-      if (!moduleMatch) {
-        moduleMatch = video['Video Name'].match(/^M(\d+)/i);
-      }
-      
-      if (moduleMatch) {
-        const moduleNumber = moduleMatch[1];
+      if (moduleName) {
+        const moduleNumber = moduleName[1];
         const moduleKey = `Module ${moduleNumber}`;
         
         if (!modules[moduleKey]) {
@@ -50,11 +31,6 @@ const Sidebar = ({ videos, onSelectVideo, currentVideo }) => {
       }
     });
     
-    // If no modules were found, add everything to "All Videos"
-    if (Object.keys(modules).length === 0) {
-      modules['All Videos'] = videos;
-    }
-    
     return modules;
   };
   
@@ -63,28 +39,14 @@ const Sidebar = ({ videos, onSelectVideo, currentVideo }) => {
 
   // If there's a current video, find its module and set it as active
   React.useEffect(() => {
-    if (currentVideo && currentVideo['Video Name']) {
-      // Try different patterns for module extraction
-      let moduleMatch = currentVideo['Video Name'].match(/Mod(\d+)/i);
-      
-      if (!moduleMatch) {
-        moduleMatch = currentVideo['Video Name'].match(/Module\s*(\d+)/i);
-      }
-      
-      if (!moduleMatch) {
-        moduleMatch = currentVideo['Video Name'].match(/^M(\d+)/i);
-      }
-      
-      if (moduleMatch) {
-        const moduleKey = `Module ${moduleMatch[1]}`;
+    if (currentVideo) {
+      const moduleName = currentVideo['Video Name'].match(/Mod(\d+)/i);
+      if (moduleName) {
+        const moduleKey = `Module ${moduleName[1]}`;
         setActiveKey(moduleKey);
-      } else if (sortedModuleKeys.includes('Other')) {
-        setActiveKey('Other');
-      } else if (sortedModuleKeys.length > 0) {
-        setActiveKey(sortedModuleKeys[0]);
       }
     }
-  }, [currentVideo, sortedModuleKeys]);
+  }, [currentVideo]);
   
   return (
     <div className="sidebar">

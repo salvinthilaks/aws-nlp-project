@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import S3Service from "../utils/S3Service";
+import AwsS3Client from "../utils/AwsS3Client";
 import "./VideoPlayer.css";
 
 const VideoPlayer = ({ video }) => {
@@ -12,36 +12,30 @@ const VideoPlayer = ({ video }) => {
     setVideoUrl(null);
     setError(null);
     setDebugInfo(null);
-    
     if (video && video["Video Name"]) {
       setLoading(true);
-      
       console.log("VideoPlayer: Getting video URL for", video["Video Name"]);
-      
-      S3Service.getSignedUrl(video["Video Name"])
-        .then(url => {
-          console.log("S3 video URL:", url);
-          setVideoUrl(url);
-          setLoading(false);
-          
-          setDebugInfo({
-            videoName: video["Video Name"],
-            url: url,
-            timestamp: new Date().toISOString()
-          });
-        })
-        .catch(err => {
-          console.error("Error getting video URL:", err);
-          setError("Failed to load video URL: " + err.message);
-          setLoading(false);
-          
-          setDebugInfo({
-            videoName: video["Video Name"],
-            error: err.message,
-            stack: err.stack,
-            timestamp: new Date().toISOString()
-          });
+      try {
+        const url = AwsS3Client.getVideoUrl(video["Video Name"]);
+        console.log("S3 video URL:", url);
+        setVideoUrl(url);
+        setLoading(false);
+        setDebugInfo({
+          videoName: video["Video Name"],
+          url: url,
+          timestamp: new Date().toISOString()
         });
+      } catch (err) {
+        console.error("Error getting video URL:", err);
+        setError("Failed to load video URL: " + err.message);
+        setLoading(false);
+        setDebugInfo({
+          videoName: video["Video Name"],
+          error: err.message,
+          stack: err.stack,
+          timestamp: new Date().toISOString()
+        });
+      }
     }
   }, [video]);
 
