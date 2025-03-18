@@ -2,21 +2,50 @@ import Papa from 'papaparse';
 
 export const parseCSV = async (csvFilePath) => {
   try {
+    console.log('Attempting to fetch CSV from:', csvFilePath);
     const response = await fetch(csvFilePath);
-    const csvText = await response.text();
     
-    return new Promise((resolve) => {
+    if (!response.ok) {
+      throw new Error(`Failed to fetch CSV: ${response.status} ${response.statusText}`);
+    }
+    
+    const csvText = await response.text();
+    console.log('CSV text loaded, length:', csvText.length);
+    
+    if (!csvText || csvText.trim() === '') {
+      throw new Error('Empty CSV file received');
+    }
+    
+    console.log('CSV sample:', csvText.substring(0, 100) + '...');
+    
+    return new Promise((resolve, reject) => {
       Papa.parse(csvText, {
         header: true,
         complete: (results) => {
-          resolve(results.data);
+          if (results.errors && results.errors.length > 0) {
+            console.warn('CSV parsing had errors:', results.errors);
+          }
+          
+          console.log('CSV parsing complete, rows:', results.data.length);
+          
+          // Filter out any rows that don't have the required fields
+          const validData = results.data.filter(item => 
+            item && item['Video Name'] && item.Transcript
+          );
+          
+          console.log('Valid rows with Video Name and Transcript:', validData.length);
+          resolve(validData);
+        },
+        error: (error) => {
+          console.error('Error parsing CSV with PapaParse:', error);
+          reject(error);
         },
         skipEmptyLines: true
       });
     });
   } catch (error) {
-    console.error('Error parsing CSV:', error);
-    return [];
+    console.error('Error in parseCSV:', error);
+    throw error;
   }
 };
 
