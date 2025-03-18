@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Alert } from 'react-bootstrap';
+import { Container, Row, Col } from 'react-bootstrap';
 import Sidebar from './Sidebar';
 import VideoPlayer from './VideoPlayer';
 import SearchBar from './SearchBar';
@@ -13,43 +13,23 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [uniqueWords, setUniqueWords] = useState([]);
-  const [debugInfo, setDebugInfo] = useState(null);
 
   useEffect(() => {
     const fetchVideos = async () => {
       try {
-        console.log('Fetching videos from CSV...');
-        setLoading(true);
-        setError(null);
-        
         const data = await parseCSV('/transcriptions.csv');
-        console.log('CSV data loaded:', data.length, 'videos found');
-        
-        // Check if data is valid
-        if (!data || data.length === 0) {
-          throw new Error('No video data found in the CSV file');
-        }
-        
-        // Validate data structure
-        const firstItem = data[0];
-        if (!firstItem['Video Name'] || !firstItem.Transcript) {
-          setDebugInfo(firstItem);
-          throw new Error('CSV structure is invalid. Expected "Video Name" and "Transcript" columns');
-        }
-        
         setVideos(data);
         setFilteredVideos(data);
         
         // Extract unique words for auto-suggest
         const words = extractUniqueWords(data);
         setUniqueWords(words);
-        console.log('Extracted', words.length, 'unique words');
         
         setLoading(false);
       } catch (err) {
-        console.error('Failed to load video data:', err);
-        setError(`Failed to load video data: ${err.message}`);
+        setError('Failed to load video data');
         setLoading(false);
+        console.error(err);
       }
     };
 
@@ -76,6 +56,10 @@ const Dashboard = () => {
     return <div className="loading">Loading videos...</div>;
   }
 
+  if (error) {
+    return <div className="error">{error}</div>;
+  }
+
   return (
     <Container fluid className="dashboard-container">
       <Row className="dashboard-header">
@@ -84,23 +68,6 @@ const Dashboard = () => {
           <SearchBar onSearch={handleSearch} uniqueWords={uniqueWords} />
         </Col>
       </Row>
-      
-      {error && (
-        <Row>
-          <Col>
-            <Alert variant="danger">
-              <Alert.Heading>Error Loading Data</Alert.Heading>
-              <p>{error}</p>
-              {debugInfo && (
-                <details>
-                  <summary>Debug Info</summary>
-                  <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
-                </details>
-              )}
-            </Alert>
-          </Col>
-        </Row>
-      )}
       
       <Row className="dashboard-content">
         <Col md={3} className="sidebar-col">
