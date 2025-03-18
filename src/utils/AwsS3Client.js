@@ -1,17 +1,21 @@
-// Direct AWS S3 client using CloudFront
-const CLOUDFRONT_DOMAIN = "https://d2hnl32vv25xsr.cloudfront.net";
+// Direct AWS S3 client using direct URLs
+const REGION = "us-east-1"; 
+const BUCKET_NAME = "salvin-nlp-project";
+
+// S3 URL for direct access
+const S3_BASE_URL = `https://${BUCKET_NAME}.s3.${REGION}.amazonaws.com`;
 
 export default class AwsS3Client {
   /**
-   * Get a direct URL for a video via CloudFront
+   * Get a direct URL for a video in S3
    * @param {string} key - Video filename
    * @returns {string} - Direct URL
    */
   static getVideoUrl(key) {
     try {
-      console.log("Getting CloudFront URL for:", key);
-      const url = `${CLOUDFRONT_DOMAIN}/${encodeURIComponent(key)}`;
-      console.log("Generated URL for video:", url);
+      console.log("Getting direct URL for:", key);
+      const url = `${S3_BASE_URL}/${encodeURIComponent(key)}`;
+      console.log("Generated URL for S3 object:", url);
       return url;
     } catch (error) {
       console.error("Error getting URL:", error);
@@ -32,8 +36,8 @@ export default class AwsS3Client {
    */
   static async listObjects() {
     try {
-      // We cannot list objects from CloudFront, this is just a placeholder
-      console.log("CloudFront doesn't support listing objects directly");
+      // For listing objects, we return a static success message
+      console.log("Attempting to list objects from public bucket");
       return [];
     } catch (error) {
       console.error("Error listing objects:", error);
