@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col } from 'react-bootstrap';
+import { Container, Row, Col, Alert } from 'react-bootstrap';
 import Sidebar from './Sidebar';
 import VideoPlayer from './VideoPlayer';
 import SearchBar from './SearchBar';
@@ -17,7 +17,14 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchVideos = async () => {
       try {
+        console.log('Fetching videos from CSV...');
         const data = await parseCSV('/transcriptions.csv');
+        
+        if (!data || data.length === 0) {
+          throw new Error('No video data found in the CSV file or the file is empty');
+        }
+        
+        console.log(`Loaded ${data.length} videos from CSV`);
         setVideos(data);
         setFilteredVideos(data);
         
@@ -27,9 +34,9 @@ const Dashboard = () => {
         
         setLoading(false);
       } catch (err) {
-        setError('Failed to load video data');
+        console.error('Failed to load video data:', err);
+        setError(`Failed to load video data: ${err.message}`);
         setLoading(false);
-        console.error(err);
       }
     };
 
@@ -56,10 +63,6 @@ const Dashboard = () => {
     return <div className="loading">Loading videos...</div>;
   }
 
-  if (error) {
-    return <div className="error">{error}</div>;
-  }
-
   return (
     <Container fluid className="dashboard-container">
       <Row className="dashboard-header">
@@ -68,6 +71,18 @@ const Dashboard = () => {
           <SearchBar onSearch={handleSearch} uniqueWords={uniqueWords} />
         </Col>
       </Row>
+      
+      {error && (
+        <Row>
+          <Col>
+            <Alert variant="danger">
+              <Alert.Heading>Error Loading Data</Alert.Heading>
+              <p>{error}</p>
+              <p>Please check that the transcriptions.csv file is available and properly formatted.</p>
+            </Alert>
+          </Col>
+        </Row>
+      )}
       
       <Row className="dashboard-content">
         <Col md={3} className="sidebar-col">

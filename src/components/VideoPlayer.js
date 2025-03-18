@@ -12,23 +12,29 @@ const VideoPlayer = ({ video }) => {
     setVideoUrl(null);
     setError(null);
     setDebugInfo(null);
+    
     if (video && video["Video Name"]) {
       setLoading(true);
-      console.log("VideoPlayer: Getting video URL for", video["Video Name"]);
+      
       try {
-        const url = AwsS3Client.getVideoUrl(video["Video Name"]);
-        console.log("S3 video URL:", url);
+        // Simple URL generation - using the function directly without SDK
+        const videoKey = video["Video Name"];
+        const url = AwsS3Client.getVideoUrl(videoKey);
+        
+        console.log("Video URL:", url);
         setVideoUrl(url);
         setLoading(false);
+        
         setDebugInfo({
           videoName: video["Video Name"],
           url: url,
           timestamp: new Date().toISOString()
         });
       } catch (err) {
-        console.error("Error getting video URL:", err);
-        setError("Failed to load video URL: " + err.message);
+        console.error("Error generating video URL:", err);
+        setError("Failed to generate video URL: " + err.message);
         setLoading(false);
+        
         setDebugInfo({
           videoName: video["Video Name"],
           error: err.message,
