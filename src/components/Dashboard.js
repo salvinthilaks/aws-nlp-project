@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import VideoPlayer from './VideoPlayer';
 import SearchBar from './SearchBar';
 import { parseCSV, searchTranscriptions, extractUniqueWords } from '../utils/csvParser';
+import S3Service from '../utils/S3Service';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -13,11 +14,19 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [uniqueWords, setUniqueWords] = useState([]);
+  const [loadingFromS3, setLoadingFromS3] = useState(false);
 
   useEffect(() => {
     const fetchVideos = async () => {
       try {
         const data = await parseCSV('/transcriptions.csv');
+        
+        if (!data || data.length === 0) {
+          // If CSV is empty, try loading from S3 as fallback
+          await loadVideosFromS3();
+          return;
+        }
+        
         setVideos(data);
         setFilteredVideos(data);
         
@@ -27,9 +36,38 @@ const Dashboard = () => {
         
         setLoading(false);
       } catch (err) {
-        setError('Failed to load video data');
+        console.error('Error loading CSV:', err);
+        
+        // Try loading from S3 as fallback
+        await loadVideosFromS3();
+      }
+    };
+
+    const loadVideosFromS3 = async () => {
+      setLoadingFromS3(true);
+      try {
+        console.log('Trying to load videos from S3...');
+        const s3Videos = await S3Service.listVideos();
+        
+        // Transform S3 items to match CSV format
+        const formattedVideos = s3Videos.map(item => ({
+          'Video Name': item.key,
+          'Transcript': `Transcript not available for ${item.key}`
+        }));
+        
+        if (formattedVideos.length > 0) {
+          setVideos(formattedVideos);
+          setFilteredVideos(formattedVideos);
+          setLoading(false);
+          setLoadingFromS3(false);
+        } else {
+          throw new Error('No videos found in S3');
+        }
+      } catch (s3Error) {
+        console.error('Error loading videos from S3:', s3Error);
+        setError('Failed to load video data. Please check the console for details.');
         setLoading(false);
-        console.error(err);
+        setLoadingFromS3(false);
       }
     };
 
@@ -53,7 +91,11 @@ const Dashboard = () => {
   };
 
   if (loading) {
-    return <div className="loading">Loading videos...</div>;
+    return (
+      <div className="loading">
+        {loadingFromS3 ? 'Loading videos from S3...' : 'Loading videos...'}
+      </div>
+    );
   }
 
   if (error) {
