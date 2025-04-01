@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>S3 Connection Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/aws-sdk@2.1094.0/dist/aws-sdk.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .result {
+        margin-top: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+      pre {
+        white-space: pre-wrap;
+      }
+      button {
+        margin-top: 10px;
+        padding: 8px 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>S3 Connection Test</h1>
+
+    <div>
+      <h2>Test Configuration</h2>
+      <form id="configForm">
+        <div>
+          <label for="bucket">S3 Bucket Name:</label>
+          <input
+            type="text"
+            id="bucket"
+            value="salvin-nlp-project"
+            style="width: 300px"
+          />
+        </div>
+        <div style="margin-top: 10px">
+          <label for="region">AWS Region:</label>
+          <input
+            type="text"
+            id="region"
+            value="us-east-1"
+            style="width: 300px"
+          />
+        </div>
+        <div style="margin-top: 10px">
+          <label for="identityPoolId">Identity Pool ID:</label>
+          <input
+            type="text"
+            id="identityPoolId"
+            value="us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            style="width: 300px"
+          />
+        </div>
+        <div style="margin-top: 10px">
+          <label for="objectKey">Object Key (Video Name):</label>
+          <input
+            type="text"
+            id="objectKey"
+            value="Mod05_Sect01_ver2.mp4"
+            style="width: 300px"
+          />
+        </div>
+        <button type="button" id="testListBtn">Test List Objects</button>
+        <button type="button" id="testUrlBtn">Test Get URL</button>
+      </form>
+    </div>
+
+    <div id="result" class="result"></div>
+
+    <script>
+      document
+        .getElementById("testListBtn")
+        .addEventListener("click", testListObjects);
+      document
+        .getElementById("testUrlBtn")
+        .addEventListener("click", testGetUrl);
+
+      function testListObjects() {
+        const bucket = document.getElementById("bucket").value;
+        const region = document.getElementById("region").value;
+        const identityPoolId = document.getElementById("identityPoolId").value;
+
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = "Testing...";
+        resultDiv.className = "result";
+
+        try {
+          // Configure AWS SDK
+          AWS.config.region = region;
+          AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+            IdentityPoolId: identityPoolId,
+          });
+
+          // Create S3 service object
+          const s3 = new AWS.S3({
+            apiVersion: "2006-03-01",
+            params: { Bucket: bucket },
+          });
+
+          // List objects in bucket
+          s3.listObjects({ Bucket: bucket }, function (err, data) {
+            if (err) {
+              console.error("Error:", err);
+              resultDiv.innerHTML = `<h3>Error:</h3><pre>${JSON.stringify(
+                err,
+                null,
+                2
+              )}</pre>`;
+              resultDiv.className = "result error";
+            } else {
+              console.log("Success:", data);
+              resultDiv.innerHTML = `<h3>Success! Found ${
+                data.Contents.length
+              } objects:</h3><pre>${JSON.stringify(
+                data.Contents.slice(0, 5),
+                null,
+                2
+              )}</pre>`;
+              resultDiv.className = "result success";
+            }
+          });
+        } catch (error) {
+          console.error("Error:", error);
+          resultDiv.innerHTML = `<h3>Error:</h3><pre>${error.toString()}</pre>`;
+          resultDiv.className = "result error";
+        }
+      }
+
+      function testGetUrl() {
+        const bucket = document.getElementById("bucket").value;
+        const region = document.getElementById("region").value;
+        const identityPoolId = document.getElementById("identityPoolId").value;
+        const objectKey = document.getElementById("objectKey").value;
+
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = "Testing...";
+        resultDiv.className = "result";
+
+        try {
+          // Configure AWS SDK
+          AWS.config.region = region;
+          AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+            IdentityPoolId: identityPoolId,
+          });
+
+          // Create S3 service object
+          const s3 = new AWS.S3({
+            apiVersion: "2006-03-01",
+            params: { Bucket: bucket },
+          });
+
+          // Generate URL
+          const url = s3.getSignedUrl("getObject", {
+            Bucket: bucket,
+            Key: objectKey,
+            Expires: 60, // URL expires in 60 seconds
+          });
+
+          console.log("URL:", url);
+          resultDiv.innerHTML = `<h3>Generated URL:</h3>
+                    <p>${url}</p>
+                    <h3>Test Video:</h3>
+                    <video controls width="400" src="${url}"></video>`;
+          resultDiv.className = "result success";
+        } catch (error) {
+          console.error("Error:", error);
+          resultDiv.innerHTML = `<h3>Error:</h3><pre>${error.toString()}</pre>`;
+          resultDiv.className = "result error";
+        }
+      }
+    </script>
+  </body>
+</html>
