@@ -1,2 +1,6 @@
-pandas>=1.3.0
-nltk>=3.6.0 
+boto3
+nltk
+pandas
+numpy
+openai-whisper
+moviepy

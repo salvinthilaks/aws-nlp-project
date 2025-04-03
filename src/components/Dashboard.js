@@ -64,11 +64,7 @@ const Dashboard = () => {
     <Container fluid className="dashboard-container">
       <Row className="dashboard-header">
         <Col>
-<<<<<<< HEAD
           <h1>Video Transcription Dashboard</h1>
-=======
-          <h1>Video Transcription</h1>
->>>>>>> f39e132d816995faabc6a98f83b7316cfcd959b1
           <SearchBar onSearch={handleSearch} uniqueWords={uniqueWords} />
         </Col>
       </Row>
